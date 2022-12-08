@@ -3,8 +3,8 @@ import mime from 'mime-types';
 
 const bucketName = process.env.AWS_MEDIABUCKET_NAME || 'Undefined';
 const region = process.env.AWS_MEDIABUCKET_REGION;
-const accessKeyId = process.env.AWS_MEDIABUCKET_ACCESS_KEY;
-const secretAccessKey = process.env.AWS_MEDIABUCKET_SECRET_KEY;
+const accessKeyId = process.env.AWS_ACCESS_KEY;
+const secretAccessKey = process.env.AWS_SECRET_KEY;
 
 const s3 = new S3({
 	region,

@@ -4,7 +4,7 @@ import { buildDateOrNumber, buildStringSector } from "../utils/helper-functions"
 import queryParse from "../utils/query-Parser";
 import Joi from "joi";
 import mime from "mime-types";
-import { deleteObject, generateEditSignature, generateUploadSignature } from "./AWS/mediaBucket";
+import { deleteObject, generateEditSignature, generateGetSignature, generateUploadSignature } from "./AWS/mediaBucket";
 
 const RESOURCE = 'Documents';
 const whitelist = [
@@ -185,9 +185,11 @@ async function get(key: string, auth: any) {
 			where: { key },
 		});
 
+		let presignedUrl = await generateGetSignature(key);
+
 		return {
 			databaseResponse: dbResponse,
-			url: `${process.env.AWS_MEDIABUCKET_DISTRIBUTION_DOMAIN}/${key}`,
+			presignedUrl
 		};
 	} catch (error: any) {
 		console.log(`[${RESOURCE}:get] controller error:${error}`);
