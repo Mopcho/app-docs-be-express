@@ -1,0 +1,69 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["interactiveTransactions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth0Id        String?  @unique
+  email          String   @unique
+  username       String   @default("Annonymous")
+  email_verified Boolean? @default(false)
+  seededUser     Boolean  @default(false)
+  file           File[]
+  labels         Label[]
+
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  Spaces      Space[]  @relation(name: "Spaces")
+  SpacecOwned Space[]  @relation(name: "Owner")
+
+  @@map("user")
+}
+
+model Label {
+  id     String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  User   User   @relation(fields: [userId], references: [id])
+  userId String @db.Uuid
+  title  String @default("New Label")
+  color  String @default("rgba(19, 255, 0, 1)")
+  File   File[]
+
+  @@map("label")
+}
+
+model File {
+  id          String  @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String
+  extName     String
+  key         String  @unique
+  contentType String
+  status      String  @default("active")
+  labels      Label[]
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @db.Uuid
+
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  Space     Space?   @relation(fields: [spaceId], references: [id])
+  spaceId   String?  @db.Uuid
+}
+
+model Space {
+  id    String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title String
+  Users User[] @relation(name: "Spaces")
+  Files File[]
+
+  Owner   User   @relation(name: "Owner", fields: [ownerId], references: [id])
+  ownerId String @db.Uuid
+
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+}

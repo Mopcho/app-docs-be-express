@@ -1,0 +1,83 @@
+Arguments: 
+  C:\Program Files\nodejs\node.exe C:\Users\Ma3x\AppData\Roaming\npm\node_modules\yarn\bin\yarn.js prisma db seed
+
+PATH: 
+  C:\Users\Ma3x\Downloads\WINDOWS.X64_193000_db_home\bin;C:\Users\Ma3x\Downloads\WINDOWS.X64_213000_db_home\bin;C:\WINDOWS\system32;C:\WINDOWS;C:\WINDOWS\System32\Wbem;C:\WINDOWS\System32\WindowsPowerShell\v1.0\;C:\WINDOWS\System32\OpenSSH\;C:\Program Files\Git\cmd;C:\Program Files\Docker\Docker\resources\bin;C:\ProgramData\DockerDesktop\version-bin;C:\Program Files\Microsoft\Azure Functions Core Tools\;C:\Program Files\dotnet\;C:\Program Files\nodejs\;C:\Users\Ma3x\AppData\Local\Microsoft\WindowsApps;C:\Program Files\Genymobile\Genymotion\tools;C:\Program Files\PostgreSQL\13\bin;C:\Users\Ma3x\AppData\Local\Programs\Python\Python38;C:\Program Files\Git\bin;C:\Users\Ma3x\AppData\Local\Programs\Microsoft VS Code\bin;C:\Program Files\Git\usr\bin;C:\Users\Ma3x\AppData\Roaming\npm
+
+Yarn version: 
+  1.22.10
+
+Node version: 
+  16.15.1
+
+Platform: 
+  win32 x64
+
+Trace: 
+  SyntaxError: C:\Users\Ma3x\Projects\knowledge-base\package.json: Unexpected token } in JSON at position 1489
+      at JSON.parse (<anonymous>)
+      at C:\Users\Ma3x\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:1625:59
+      at Generator.next (<anonymous>)
+      at step (C:\Users\Ma3x\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:310:30)
+      at C:\Users\Ma3x\AppData\Roaming\npm\node_modules\yarn\lib\cli.js:321:13
+
+npm manifest: 
+  {
+    "name": "knowledge-base",
+    "version": "1.0.0",
+    "description": "",
+    "main": "dist/index.js",
+    "scripts": {
+      "build": "npx tsc",
+      "//start_comment": "node dist/index.js",
+      "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
+      "start": "nodemon src/server/index.ts"
+    },
+    "repository": {
+      "type": "git",
+      "url": "git+https://github.com/ihadventureandcreative/knowledge-base.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+      "url": "https://github.com/ihadventureandcreative/knowledge-base.git/issues"
+    },
+    "homepage": "https://github.com/ihadventureandcreative/knowledge-base.git.git#readme",
+    "dependencies": {
+      "@babel/preset-env": "^7.18.2",
+      "@prisma/client": "^4.0.0",
+      "dotenv": "^16.0.1",
+      "express": "^4.18.1",
+      "express-jwt": "^7.7.5",
+      "jwks-rsa": "^2.1.4",
+      "jwt-decode": "^3.1.2",
+      "mongoose": "^6.4.2",
+      "node-cache": "^5.1.2",
+      "prisma": "^4.0.0",
+      "ramda": "^0.28.0",
+      "request": "^2.88.2"
+    },
+    "devDependencies": {
+      "@azure/cosmos": "^3.16.1",
+      "@babel/preset-typescript": "^7.17.12",
+      "@types/express": "^4.17.13",
+      "@types/jest": "^28.1.2",
+      "@types/node": "^18.0.0",
+      "axios": "^0.27.2",
+      "concurrently": "^7.2.2",
+      "jest": "^28.1.1",
+      "nodemon": "^2.0.16",
+      "ts-jest": "^28.0.5",
+      "ts-node": "^10.8.1",
+      "typescript": "^4.7.4"
+    },
+    "prisma": {
+      "seed": "ts-node -r tsconfig-paths/register -r dotenv/config src/prisma/seed.ts"
+    },
+  }
+
+yarn manifest: 
+  No manifest
+
+Lockfile: 
+  No lockfile
