@@ -184,7 +184,7 @@ async function find(query: any, auth: any) {
 			throw new NotFoundError('User not found');
 		}
 
-		// We check if user is admin
+		// We check if user is an admin
 		const isAdmin = userRoles.includes('Admin');
 
 		if (!isAdmin) {
@@ -197,12 +197,20 @@ async function find(query: any, auth: any) {
 				if (queryValue !== 'all') {
 					prismaQuery.where.contentType.contains = queryValue;
 				}
-			} else if (isDateSector(key) || isNumberSector(key)) {
+			}
+			else if(key.toLowerCase() === 'name') {
+				prismaQuery.where.name = {
+					contains : queryValue
+				};
+			} 
+			else if (isDateSector(key) || isNumberSector(key)) {
 				prismaQuery.where[key] = buildDateOrNumber(queryValue);
 			} else {
 				prismaQuery.where[key] = buildStringSector(queryValue);
 			}
 		}
+
+		console.log(prismaQuery);
 
 		let [total, data] = await prisma.$transaction([
 			prisma.file.count({
