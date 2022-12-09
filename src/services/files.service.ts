@@ -1,5 +1,5 @@
 import prisma from "../prisma/index";
-import { NotFoundError } from "../utils/errors";
+import { NotFoundError, ValidationError } from "../utils/errors";
 import { buildDateOrNumber, buildStringSector } from "../utils/helper-functions";
 import queryParse from "../utils/query-Parser";
 import { generateGetSignature } from "./AWS/s3";
@@ -87,6 +87,59 @@ async function find(query: any, auth: any) {
 	}
 }
 
+async function removeFromTrash(key:string, auth: any) {
+    try {
+		// Destructure
+		let userRoles = auth['roles/roles'];
+		let auth0Id = auth.sub;
+
+		// Check if user exists
+        const user  = await prisma.user.findUnique({
+            where : {
+                auth0Id
+            }
+        });
+
+        if(!user) {
+            throw new NotFoundError('User does not exist');
+        }
+
+        // Check if file exists
+        const file = await prisma.file.findUnique({
+            where : {
+                key
+            }
+        });
+
+        if(!file) {
+            throw new NotFoundError('File does not exist');
+        }
+
+        // Check if user can access this file
+        const isAdmin = userRoles.includes('Admin');
+        const isOwner = file.userId === user.id;
+
+        if(!isAdmin && !isOwner) {
+            throw new ValidationError('User does not have the permissions needed to alter this file');
+        }
+
+        // Change status to 'active'
+        const databaseResponse = await prisma.file.update({
+            where : {
+                key
+            },
+            data : {
+                status : 'active'
+            }
+        });
+
+        return {databaseResponse};
+	} catch (error: any) {
+		console.log(`[${RESOURCE}:find] controller error:${error}`);
+		throw error;
+	}
+}
+
 /* Helper Functions */
 function isNumberSector(key: string) {
 	return false;
@@ -100,4 +153,5 @@ function isDateSector(key: string) {
 
 export default {
     find,
+    removeFromTrash
 };
