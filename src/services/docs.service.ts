@@ -427,7 +427,7 @@ async function _delete(key: string, auth: any) {
 			throw new NotFoundError('User not found');
 		}
 
-		// Check if fileexists
+		// Check if file exists
 		const file = await prisma.file.findUnique({
 			where: {
 				key,

@@ -264,37 +264,67 @@ async function update(key: string, data: any, auth: any) {
 async function _delete(key: string, auth: any) {
 	try {
 		// User can delete only his files
-		let userRoles = auth['roles/roles'];
+		const userRoles = auth['roles/roles'];
 
-		let auth0Id = auth.sub;
+		const auth0Id = auth.sub;
 
-		if (!userRoles.includes('Admin')) {
-			//Get user
-			let user = await prisma.user.findUniqueOrThrow({
-				where: {
-					auth0Id,
-				},
-			});
-
-			//If this user id and key are not present in files throw an error
-			await prisma.file.findFirstOrThrow({
-				where: {
-					userId: user.id,
-					key: key,
-				},
-			});
-		}
-		// Delete from AWS S3 Bucket
-		let awsResponse = await deleteObject(key);
-
-		// Delete from DB
-		let dbResponse = await prisma.file.delete({
+		//Check if user exists
+		const user = await prisma.user.findUnique({
 			where: {
+				auth0Id,
+			},
+		});
+
+		if(!user) {
+			throw new NotFoundError('User not found');
+		}
+
+		// Check if file exists
+		const file = await prisma.file.findFirst({
+			where: {
+				userId: user.id,
 				key: key,
 			},
 		});
 
-		return { databaseResponse: dbResponse, awsResponse: awsResponse };
+		if(!file) {
+			throw new NotFoundError('File not found');
+		}
+
+		const isAdmin = userRoles.includes('Admin');
+		const isOwner = file.userId === user.id;
+
+		if(!isOwner && !isAdmin) {
+			throw new ValidationError('User does not have permissions to alter this file');
+		}
+
+		console.log(file.status);
+
+		if(file.status === 'active') {
+			const databaseResponse = await prisma.file.update({
+				where: {
+					key,
+				},
+				data: {
+					status: 'deleted',
+				},
+			});
+
+			return { databaseResponse };
+		} else if(file.status === 'deleted') {
+			// Delete from AWS S3 Bucket
+			const awsResponse = await deleteObject(key);
+
+			// Delete from DB
+			const databaseResponse = await prisma.file.delete({
+				where: {
+					key: key,
+				},
+			});
+
+			return { databaseResponse, awsResponse };
+		}
+
 	} catch (error: any) {
 		console.log(`[${RESOURCE}:delete] controller error:${error}`);
 		throw error;

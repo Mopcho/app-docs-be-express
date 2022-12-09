@@ -1,4 +1,4 @@
-import S3, { GetObjectRequest, PutObjectRequest } from 'aws-sdk/clients/s3';
+import S3,{ GetObjectRequest, PutObjectRequest } from 'aws-sdk/clients/s3';
 import mime from 'mime-types';
 
 const bucketName = process.env.AWS_MEDIABUCKET_NAME || 'Undefined';
