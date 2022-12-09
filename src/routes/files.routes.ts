@@ -6,5 +6,6 @@ const filesRouter: Router = express.Router();
 
 filesRouter.get('/', roleGuard.check('User'), filesController.find);
 filesRouter.put('/remove-from-trash/:key', roleGuard.check('User'), filesController.removeFromTrash);
+filesRouter.put('/:key', roleGuard.check('User'), filesController.update);
 
 export default filesRouter;

@@ -1,3 +1,5 @@
+import { DatabaseDocUpdateData, ReverseFunctions, UpdateDataInput } from "../interfaces/docsInterfaces";
+import { validateDocumentUpdateData } from "../validations/docs/docs.validation";
 import prisma from "../prisma/index";
 import { NotFoundError, ValidationError } from "../utils/errors";
 import { buildDateOrNumber, buildStringSector } from "../utils/helper-functions";
@@ -140,6 +142,124 @@ async function removeFromTrash(key:string, auth: any) {
 	}
 }
 
+/**
+ * Update
+ */
+async function update(data: UpdateDataInput) {
+	let reverseFunctions: ReverseFunctions = {};
+	try {
+		// Destructure data
+		const { fileName, auth, key } = data;
+
+		// Create databaseData
+		const databaseData: DatabaseDocUpdateData = {
+			fileName,
+			auth,
+			key,
+		};
+
+		const databaseResponse = await updateInDatabase(databaseData);
+		reverseFunctions.databaseReverse = databaseResponse.reverseChanges;
+
+		return {
+			datatabaseResponse: databaseResponse.dataResponse,
+		};
+	} catch (error: any) {
+		console.log(`[${RESOURCE}:update] controller error:${error}`);
+		throw error;
+	}
+}
+
+/**
+ * Update a document in the database
+ * @param {DatabaseDocUpdateData} data
+ * @returns
+ * 1. Destructure data
+ * 2. Validate data
+ * 3. Check if user exists
+ * 4. Check if document exists
+ * 5. Check if use is either admin or owner of the document
+ * 6. Update
+ * 7. Create reverseChanges function
+ */
+async function updateInDatabase(data: DatabaseDocUpdateData) {
+	try {
+		// Destructure data
+		const { fileName, auth, key } = data;
+		const auth0Id = auth.sub;
+		const userRoles: string[] = auth['roles/roles'];
+
+		// Validate data
+		const validate = validateDocumentUpdateData(data);
+
+		if (validate.error) {
+			throw new ValidationError(validate.error.message);
+		}
+
+		// Check if user exists
+		const user = await prisma.user.findUnique({
+			where: {
+				auth0Id,
+			},
+		});
+
+		if (!user) {
+			throw new NotFoundError('User not found');
+		}
+
+		// Check if document exists
+		const document = await prisma.file.findUnique({
+			where: {
+				key,
+			},
+		});
+
+		if (!document) {
+			throw new NotFoundError('Document not found');
+		}
+
+		// Check if use is either admin or owner of the document
+		const isAdmin = userRoles.includes('Admin');
+		const isOwner = user.id === document.userId;
+
+		if (!isAdmin && !isOwner) {
+			throw new ValidationError(
+				'User doesnt have permission yo update this document'
+			);
+		}
+
+		// Update
+		const dataResponse = await prisma.file.update({
+			where: {
+				key,
+			},
+			data: {
+				name: fileName,
+			},
+		});
+
+		// Create reverseChanges function
+		const reverseChanges = async () => {
+			const response = await prisma.file.update({
+				where: {
+					key,
+				},
+				data: {
+					...document,
+				},
+			});
+		};
+
+		return {
+			dataResponse,
+			reverseChanges,
+		};
+	} catch (error: any) {
+		console.log(`[${RESOURCE}:update] controller error:${error}`);
+		throw error;
+	}
+}
+
 /* Helper Functions */
 function isNumberSector(key: string) {
 	return false;
@@ -153,5 +273,6 @@ function isDateSector(key: string) {
 
 export default {
     find,
-    removeFromTrash
+    removeFromTrash,
+    update
 };
