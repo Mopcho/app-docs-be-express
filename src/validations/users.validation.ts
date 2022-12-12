@@ -7,7 +7,6 @@ const userCreateSchema = Joi.object({
 	username: Joi.string().required(),
 	email: Joi.string().required().email(),
 	email_verified: Joi.bool(),
-	seededUser: Joi.bool(),
 });
 
 const userUpdateSchema = Joi.object({
@@ -15,7 +14,6 @@ const userUpdateSchema = Joi.object({
 	email: Joi.string().email(),
 	email_verified: Joi.bool().falsy(),
 	seededUser: Joi.bool(),
-	auth0Id: Joi.string(),
 	profileImageKey: Joi.string(),
 });
 

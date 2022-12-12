@@ -1,8 +1,9 @@
+import { HttpStatusCode } from "../interfaces/errors";
 import prisma from "../prisma";
-import { NotFoundError } from "../utils/errors";
+import { ApiError } from "../utils/errors";
 import { buildDateOrNumber, buildStringSector } from "../utils/helper-functions";
 import queryParse from "../utils/query-Parser";
-import { validateUserUpdate } from "../validations/users/users.validation";
+import { validateUserUpdate } from "../validations/users.validation";
 
 const RESOURCE = 'Users';
 
@@ -13,21 +14,21 @@ const RESOURCE = 'Users';
 /**
  * Create
  */
-async function create(data: any) {
-	try {
-		// Create User in our DB
-		return await prisma.user.create({
-			data: {
-				username: data.name,
-				email: data.email,
-				id: data._id,
-			},
-		});
-	} catch (error: any) {
-		console.log(`[${RESOURCE}:create] controller error:${error}`);
-		throw error;
-	}
-}
+// async function create(data: any) {
+// 	try {
+// 		// Create User in our DB
+// 		return await prisma.user.create({
+// 			data: {
+// 				username: data.name,
+// 				email: data.email,
+// 				id: data._id,
+// 			},
+// 		});
+// 	} catch (error: any) {
+// 		console.log(`[${RESOURCE}:create] controller error:${error}`);
+// 		throw error;
+// 	}
+// }
 
 /**
  * Read
@@ -78,7 +79,7 @@ async function get(id: string) {
 		});
 
 		if (!user) {
-			throw new NotFoundError('User not found');
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		return user;
@@ -88,27 +89,27 @@ async function get(id: string) {
 	}
 }
 
-async function getByToken(auth: any) {
-	try {
-		if (!auth) {
-			throw new NotFoundError('Token not found');
-		}
-		const user = await prisma.user.findUnique({
-			where: {
-				auth0Id: auth.sub,
-			},
-		});
+// async function getByToken(auth: any) {
+// 	try {
+// 		if (!auth) {
+// 			throw new NotFoundError('Token not found');
+// 		}
+// 		const user = await prisma.user.findUnique({
+// 			where: {
+// 				auth0Id: auth.sub,
+// 			},
+// 		});
 
-		if (!user) {
-			throw new NotFoundError('User not found');
-		}
+// 		if (!user) {
+// 			throw new NotFoundError('User not found');
+// 		}
 
-		return user;
-	} catch (error: any) {
-		console.log(`[${RESOURCE}:get] controller error:${error}`);
-		throw error;
-	}
-}
+// 		return user;
+// 	} catch (error: any) {
+// 		console.log(`[${RESOURCE}:get] controller error:${error}`);
+// 		throw error;
+// 	}
+// }
 
 /**
  * Update
@@ -154,10 +155,10 @@ function isDateSector(key: string) {
 /* Specific */
 
 export default {
-	create,
+	// create,
 	find,
 	delete: _delete,
 	get,
 	update,
-	getByToken,
+	// getByToken,
 };

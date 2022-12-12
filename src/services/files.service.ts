@@ -1,10 +1,12 @@
 import { DatabaseDocUpdateData, ReverseFunctions, UpdateDataInput } from "../interfaces/docsInterfaces";
-import { validateDocumentUpdateData } from "../validations/docs/docs.validation";
+import { validateDocumentUpdateData } from "../validations/docs.validation";
 import prisma from "../prisma/index";
-import { NotFoundError, ValidationError } from "../utils/errors";
+import { ApiError } from "../utils/errors";
 import { buildDateOrNumber, buildStringSector } from "../utils/helper-functions";
 import queryParse from "../utils/query-Parser";
 import { generateGetSignature } from "./AWS/s3";
+import { UsersWithRoles } from "../config/passport/lib.pass";
+import { HttpStatusCode } from "../interfaces/errors";
 
 const RESOURCE = 'Files';
 /**
@@ -13,11 +15,11 @@ const RESOURCE = 'Files';
  * @param auth - An object containing user info
  * @param auth.sub - Auth0Id of the user
  */
-async function find(query: any, auth: any) {
+async function find(query: any, expressUser: UsersWithRoles) {
 	try {
 		// Destructure
-		let userRoles = auth['roles/roles'];
-		let auth0Id = auth.sub;
+		const userRoles = expressUser.Roles.map(x => x.title);
+		const userId = expressUser.id;
 
 		// Query parse handles skip , take , orderBy , select  , include
 		let prismaQuery = queryParse(query);
@@ -31,12 +33,12 @@ async function find(query: any, auth: any) {
 		// Check if user exists
 		const user = await prisma.user.findUnique({
 			where: {
-				auth0Id,
+				id: userId,
 			},
 		});
 
 		if (!user) {
-			throw new NotFoundError('User not found');
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		// We check if user is admin
@@ -50,7 +52,7 @@ async function find(query: any, auth: any) {
 			let queryValue = query[key];
 			if (key.toLowerCase() === 'contenttype') {
 				if (queryValue !== 'all') {
-					prismaQuery.where.contentType.contains = queryValue;
+					prismaQuery.where.contentType.contains = queryValue.toLowerCase();
 				}
 			} else if (isDateSector(key) || isNumberSector(key)) {
 				prismaQuery.where[key] = buildDateOrNumber(queryValue);
@@ -89,21 +91,21 @@ async function find(query: any, auth: any) {
 	}
 }
 
-async function removeFromTrash(key:string, auth: any) {
+async function removeFromTrash(key:string, expressUser: UsersWithRoles) {
     try {
 		// Destructure
-		let userRoles = auth['roles/roles'];
-		let auth0Id = auth.sub;
+		const userRoles = expressUser.Roles.map(x => x.title);
+		const userId = expressUser.id;
 
 		// Check if user exists
         const user  = await prisma.user.findUnique({
             where : {
-                auth0Id
+                id: userId
             }
         });
 
         if(!user) {
-            throw new NotFoundError('User does not exist');
+            throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
         }
 
         // Check if file exists
@@ -114,7 +116,7 @@ async function removeFromTrash(key:string, auth: any) {
         });
 
         if(!file) {
-            throw new NotFoundError('File does not exist');
+            throw new ApiError('NOT FOUND', 'File does not exists in the database', HttpStatusCode.NOT_FOUND);
         }
 
         // Check if user can access this file
@@ -122,7 +124,7 @@ async function removeFromTrash(key:string, auth: any) {
         const isOwner = file.userId === user.id;
 
         if(!isAdmin && !isOwner) {
-            throw new ValidationError('User does not have the permissions needed to alter this file');
+            throw new ApiError('FORBIDDEN', 'This user has no access to alter this file', HttpStatusCode.FORBIDDEN);
         }
 
         // Change status to 'active'
@@ -149,12 +151,12 @@ async function update(data: UpdateDataInput) {
 	let reverseFunctions: ReverseFunctions = {};
 	try {
 		// Destructure data
-		const { fileName, auth, key } = data;
+		const { fileName, user, key } = data;
 
 		// Create databaseData
 		const databaseData: DatabaseDocUpdateData = {
 			fileName,
-			auth,
+			user,
 			key,
 		};
 
@@ -185,26 +187,27 @@ async function update(data: UpdateDataInput) {
 async function updateInDatabase(data: DatabaseDocUpdateData) {
 	try {
 		// Destructure data
-		const { fileName, auth, key } = data;
-		const auth0Id = auth.sub;
-		const userRoles: string[] = auth['roles/roles'];
+		const { fileName, user, key } = data;
+		// Destructure
+		const userRoles = user.Roles.map(x => x.title);
+		const userId = user.id;
 
 		// Validate data
 		const validate = validateDocumentUpdateData(data);
 
 		if (validate.error) {
-			throw new ValidationError(validate.error.message);
+			throw new ApiError('Validation Error', validate.error.message, HttpStatusCode.BAD_REQUEST);
 		}
 
 		// Check if user exists
-		const user = await prisma.user.findUnique({
+		const fetchedUser = await prisma.user.findUnique({
 			where: {
-				auth0Id,
+				id: userId,
 			},
 		});
 
-		if (!user) {
-			throw new NotFoundError('User not found');
+		if (!fetchedUser) {
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		// Check if document exists
@@ -215,17 +218,15 @@ async function updateInDatabase(data: DatabaseDocUpdateData) {
 		});
 
 		if (!document) {
-			throw new NotFoundError('Document not found');
+			throw new ApiError('NOT FOUND', 'Document does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		// Check if use is either admin or owner of the document
 		const isAdmin = userRoles.includes('Admin');
-		const isOwner = user.id === document.userId;
+		const isOwner = fetchedUser.id === document.userId;
 
 		if (!isAdmin && !isOwner) {
-			throw new ValidationError(
-				'User doesnt have permission yo update this document'
-			);
+			throw new ApiError('Unauthorized', 'User does not have permission to alter this file', HttpStatusCode.FORBIDDEN);
 		}
 
 		// Update
@@ -234,7 +235,7 @@ async function updateInDatabase(data: DatabaseDocUpdateData) {
 				key,
 			},
 			data: {
-				name: fileName,
+				name: fileName
 			},
 		});
 

@@ -10,18 +10,16 @@ datasource db {
 
 model User {
   id             String   @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  auth0Id        String?  @unique
+  password String
   email          String   @unique
   username       String   @default("Annonymous")
   email_verified Boolean? @default(false)
-  seededUser     Boolean  @default(false)
   file           File[]
   labels         Label[]
+  Roles    Roles[]
 
   updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  Spaces      Space[]  @relation(name: "Spaces")
-  SpacecOwned Space[]  @relation(name: "Owner")
 
   @@map("user")
 }
@@ -51,19 +49,23 @@ model File {
 
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
-  Space     Space?   @relation(fields: [spaceId], references: [id])
-  spaceId   String?  @db.Uuid
 }
 
-model Space {
-  id    String @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  title String
-  Users User[] @relation(name: "Spaces")
-  Files File[]
-
-  Owner   User   @relation(name: "Owner", fields: [ownerId], references: [id])
-  ownerId String @db.Uuid
+model Roles {
+  id     String   @id @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title  String   @unique
+  scopes String[]
 
   updatedAt DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(3)
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  Users     User[]
+
+  @@map("roles")
+}
+
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
 }

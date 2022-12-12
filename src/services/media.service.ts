@@ -1,10 +1,12 @@
 import prisma from "../prisma";
-import { NotFoundError, ValidationError } from "../utils/errors";
+import {ApiError } from "../utils/errors";
 import { buildDateOrNumber, buildStringSector } from "../utils/helper-functions";
 import queryParse from "../utils/query-Parser";
 import Joi from "joi";
 import mime from "mime-types";
 import { deleteObject, generateEditSignature, generateGetSignature, generateUploadSignature } from "./AWS/mediaBucket";
+import { UsersWithRoles } from "../config/passport/lib.pass";
+import { HttpStatusCode } from "../interfaces/errors";
 
 const RESOURCE = 'Documents';
 const whitelist = [
@@ -27,17 +29,20 @@ const whitelist = [
  */
 async function create(data: any) {
 	try {
-		const { extName, fileName, auth0Id } = data;
+		const { extName, fileName, user } = data;
+
+		const userRoles = user.Roles.map((x:any) => x.title);
+		const userId = user.id;
 
 		// Check if user exists
-		const user = await prisma.user.findUnique({
+		const fetchedUser = await prisma.user.findUnique({
 			where: {
-				auth0Id,
+				id: userId,
 			},
 		});
 
-		if (!user) {
-			throw new NotFoundError('User not found');
+		if (!fetchedUser) {
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		//Validate Input
@@ -54,7 +59,7 @@ async function create(data: any) {
 		let contentType = mime.lookup(extName);
 
 		if (contentType === false || !whitelist.includes(contentType)) {
-			throw new ValidationError('Invalid mime type!');
+			throw new ApiError('Unsupported Media Type', 'This files content type is not supported. This endpoint supports mainly video types', HttpStatusCode.UNSUPPORTED_MEDIA_TYPE);
 		}
 
 		// Generate Upload Signature
@@ -88,14 +93,23 @@ async function create(data: any) {
  * Read
  */
 
-async function find(query: any, auth: any) {
+async function find(query: any, expressUser: UsersWithRoles) {
 	try {
-		let userRoles = auth['roles/roles'];
-
-		let auth0Id = auth.sub;
+		const userRoles = expressUser.Roles.map(x => x.title);
+		const userId = expressUser.id;
 
 		// Query parse handles skip , take , orderBy , select  , include
 		let prismaQuery = queryParse(query);
+
+		const user = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+
+		if (!user) {
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
+		}
 
 		// Wе handle alone where clause ( Because it may be specific to product)
 		if (!prismaQuery.where) {
@@ -104,18 +118,12 @@ async function find(query: any, auth: any) {
 					in: whitelist,
 				},
 			};
-			if (!userRoles.includes('Admin')) {
-				let user = await prisma.user.findUnique({
-					where: {
-						auth0Id,
-					},
-				});
+		}
 
-				if (!user) {
-					throw new Error('Invalid User');
-				}
-				prismaQuery.where['userId'] = user.id;
-			}
+		const isAdmin = userRoles.includes('Admin');
+		
+		if (!isAdmin) {
+			prismaQuery.where['userId'] = user.id;
 		}
 
 		for (const key in query) {
@@ -155,37 +163,43 @@ async function find(query: any, auth: any) {
 	}
 }
 
-async function get(key: string, auth: any) {
+async function get(key: string, expressUser: UsersWithRoles) {
 	try {
-		// Only user's files
-		const userRoles = auth['roles/roles'];
+		const userRoles = expressUser.Roles.map(x => x.title);
+		const userId = expressUser.id;
 
-		const auth0Id = auth.sub;
+		//Get user
+		const fetchedUser = await prisma.user.findUnique({
+			where: {
+				id: userId,
+			},
+		});
+
+		if(!fetchedUser) {
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
+		}
+
+		//If this user id and key are not present in files throw an error
+		const file = await prisma.file.findUnique({
+			where: {
+				key,
+			},
+		});
+
+		const isAdmin = userRoles.includes('Admin');
+		const isOwner = file?.userId == userId;
 
 		// If user isnt admin check if it is his file
-		if (!userRoles.includes('Admin')) {
-			//Get user
-			let user = await prisma.user.findUniqueOrThrow({
-				where: {
-					auth0Id: auth0Id,
-				},
-			});
-
-			//If this user id and key are not present in files throw an error
-			await prisma.file.findFirstOrThrow({
-				where: {
-					userId: user.id,
-					key: key,
-				},
-			});
+		if (!isAdmin && !isOwner) {
+			throw new ApiError('Unaothorized', 'User does not have access to alter this file', HttpStatusCode.FORBIDDEN);
 		}
 
 		// Get From our DB
-		let dbResponse = await prisma.file.findUnique({
+		const dbResponse = await prisma.file.findUnique({
 			where: { key },
 		});
 
-		let presignedUrl = await generateGetSignature(key);
+		const presignedUrl = await generateGetSignature(key);
 
 		return {
 			databaseResponse: dbResponse,
@@ -200,50 +214,56 @@ async function get(key: string, auth: any) {
 /**
  * Update
  */
-async function update(key: string, data: any, auth: any) {
+async function update(key: string, data: any, user: Express.User) {
 	try {
 		let { extName, fileName } = data;
-		let userRoles = auth['roles/roles'];
-		let auth0Id = auth.sub;
+		const userRoles = user.Roles.map(role => role.title);
+		const userId = user.id;
 
 		// Check if user exists
-		let user = await prisma.user.findUniqueOrThrow({
+		const fetchedUser = await prisma.user.findUnique({
 			where: {
-				auth0Id,
+				id: userId,
 			},
 		});
 
+		if(!fetchedUser) {
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
+		}
+
+		//If this user id and key are not present in files throw an error
+		const file = await prisma.file.findUnique({
+			where: {
+				key: key,
+			},
+		});
+
+		if(!file) {
+			throw new ApiError('NOT FOUND', 'File does not exists in the database', HttpStatusCode.NOT_FOUND);
+		}
+
 		//Validate Input
-		let schema = Joi.object({
+		const schema = Joi.object({
 			extName: Joi.string().required(),
 			name: Joi.string().required(),
 			userId: Joi.string().required(),
 		});
 
-		schema.validate({ extName, fileName, userId: user.id });
+		schema.validate({ extName, fileName, userId });
+
+		const isAdmin = userRoles.includes('Admin');
+		const isOwner = file.userId === userId;
 
 		//Only object's owner can update it
-		if (!userRoles.includes('Admin')) {
-			//Get user or throw
-			let user = await prisma.user.findUniqueOrThrow({
-				where: {
-					auth0Id,
-				},
-			});
-
-			//If this user id and key are not present in files throw an error
-			await prisma.file.findFirstOrThrow({
-				where: {
-					userId: user.id,
-					key: key,
-				},
-			});
+		if (!isAdmin && !isOwner) {
+			throw new ApiError('Unauthorized','User does not have permissions to alter this file' , HttpStatusCode.FORBIDDEN);
 		}
+
 		//Get Signed Url
-		let awsResponse = await generateEditSignature(key, fileName, extName);
+		const awsResponse = await generateEditSignature(key, fileName, extName);
 
 		//Update our DB
-		let dbResponse = await prisma.file.update({
+		const dbResponse = await prisma.file.update({
 			where: { key },
 			data: {
 				extName: extName,
@@ -261,44 +281,39 @@ async function update(key: string, data: any, auth: any) {
 /**
  * Delete
  */
-async function _delete(key: string, auth: any) {
+async function _delete(key: string, user: Express.User) {
 	try {
-		// User can delete only his files
-		const userRoles = auth['roles/roles'];
-
-		const auth0Id = auth.sub;
+		const userRoles = user.Roles.map(role => role.title);
+		const userId = user.id;
 
 		//Check if user exists
-		const user = await prisma.user.findUnique({
+		const fetchedUser = await prisma.user.findUnique({
 			where: {
-				auth0Id,
+				id: userId,
 			},
 		});
 
-		if(!user) {
-			throw new NotFoundError('User not found');
+		if(!fetchedUser) {
+			throw new ApiError('NOT FOUND', 'User does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		// Check if file exists
-		const file = await prisma.file.findFirst({
+		const file = await prisma.file.findUnique({
 			where: {
-				userId: user.id,
-				key: key,
+				key,
 			},
 		});
 
 		if(!file) {
-			throw new NotFoundError('File not found');
+			throw new ApiError('NOT FOUND', 'File does not exists in the database', HttpStatusCode.NOT_FOUND);
 		}
 
 		const isAdmin = userRoles.includes('Admin');
-		const isOwner = file.userId === user.id;
+		const isOwner = file.userId === userId;
 
 		if(!isOwner && !isAdmin) {
-			throw new ValidationError('User does not have permissions to alter this file');
+			throw new ApiError('Unauthorized','User does not have permissions to alter this file' , HttpStatusCode.FORBIDDEN);
 		}
-
-		console.log(file.status);
 
 		if(file.status === 'active') {
 			const databaseResponse = await prisma.file.update({

@@ -1,52 +1,48 @@
-import _errorHandler from '../utils/error-handler';
 import filesService from '../services/files.service';
-import {Request, Response} from 'express';
+import {NextFunction, Request, Response} from 'express';
 
 const RESOURCE = 'Docs';
 
-async function find(req: Request, res: Response) {
+async function find(req: Request, res: Response, next: NextFunction) {
 	try {
 		const dataResponse = await filesService.find(
 			req.query,
 			// @ts-ignore
-			req.auth
+			req.user
 		);
 
 		res.status(200).json(dataResponse);
 	} catch (error) {
-		console.log(`[${RESOURCE}:find] route handler error:${error}`);
-		_errorHandler(error as Error, res);
+		next(error);
 	}
 }
 
-async function removeFromTrash(req: Request, res: Response) {
+async function removeFromTrash(req: Request, res: Response, next: NextFunction) {
     try {
 		const dataResponse = await filesService.removeFromTrash(
 			req.params.key,
 			// @ts-ignore
-			req.auth
+			req.user
 		);
 
 		res.status(200).json(dataResponse);
 	} catch (error) {
-		console.log(`[${RESOURCE}:find] route handler error:${error}`);
-		_errorHandler(error as Error, res);
+		next(error);
 	}
 }
 
-async function update(req: Request, res: Response) {
+async function update(req: Request, res: Response, next: NextFunction) {
     try {
 		const dataResponse = await filesService.update({
             ...req.body,
             key: req.params.key,
             //@ts-ignore
-            auth: req.auth
+            user: req.user
         });
 
 		res.status(200).json(dataResponse);
 	} catch (error) {
-		console.log(`[${RESOURCE}:find] route handler error:${error}`);
-		_errorHandler(error as Error, res);
+		next(error);
 	}
 }
 

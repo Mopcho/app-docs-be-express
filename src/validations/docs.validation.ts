@@ -7,14 +7,20 @@ const validator = (schema: ObjectSchema) => (payload: any) =>
 const documentCreateSchema = Joi.object({
 	fileName: Joi.string().required(),
 	extName: Joi.string().required(),
-	auth0Id: Joi.string().required(),
 	key: Joi.string().required(),
+	user: Joi.object({
+		Roles: Joi.array().required(),
+		id: Joi.string().required()
+	}).required().unknown()
 });
 
 const documentUpdateSchema = Joi.object({
 	fileName: Joi.string(),
-	auth: Joi.object().required(),
 	key: Joi.string().required(),
+	user: Joi.object({
+		Roles: Joi.array().required(),
+		id: Joi.string().required()
+	}).required().unknown()
 });
 
 // *** Validator functions ***

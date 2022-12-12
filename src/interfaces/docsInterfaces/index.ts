@@ -1,3 +1,5 @@
+import { File } from '@prisma/client';
+import { UsersWithRoles } from '@src/config/passport/lib.pass';
 import { PrismaQuery } from '../../utils/query-Parser';
 
 export type ReverseFunctions = {
@@ -11,24 +13,24 @@ export type FindQuery = {
 export type CreateDataInput = {
 	extName: string;
 	fileName: string;
-	auth0Id: string;
+	user: Express.User;
 };
 
 export type DatabaseDocCreateData = {
 	extName: string;
 	fileName: string;
-	auth0Id: string;
+	user: Express.User;
 	key: string;
 };
 
 export type UpdateDataInput = {
 	fileName?: string;
-	auth: any;
+	user: Express.User;
 	key: string;
 };
 
 export type DatabaseDocUpdateData = {
 	fileName?: string;
-	auth: any;
+	user: Express.User;
 	key: string;
 };
