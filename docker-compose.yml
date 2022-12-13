@@ -1,29 +1,42 @@
-version: "3.8"
+version: "3.9"
 services:
-  db:
+  postgres:
     image: postgres
-    container_name: docsPG
-    restart: always
+    container_name: postgres
+    restart: unless-stopped
+    hostname: postgres
     ports:
-      - "3001:5432"
+      - "5432:5432"
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: admin
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: docsDB
     volumes:
       - local_pgdata:/var/lib/postgresql/data
   pgadmin:
     image: dpage/pgadmin4
-    container_name: docsPGADMIN
-    restart: always
+    container_name: pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
     ports:
       - "3002:80"
     environment:
       PGADMIN_DEFAULT_EMAIL: valeri_petkov01@abv.bg
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_PASSWORD: postgres
     volumes:
       - pgadmin-data:/var/lib/pgadmin
-
+  docsapi:
+    stdin_open: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docsapi
+    depends_on:
+      - postgres
+    ports:
+      - "3030:3030"
+    restart: always
 volumes:
   local_pgdata:
   pgadmin-data:

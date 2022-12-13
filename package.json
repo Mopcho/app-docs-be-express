@@ -8,9 +8,8 @@
     "//start_comment": "node dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "start": "nodemon src/server/index.ts",
-    "seed": "node dist/src/prisma/seed.js",
-    "test": "jest",
-    "patchDB": "node prisma/additional/changes.js"
+    "start:migrate" : "npx prisma migrate dev --name Init && npm run start",
+    "test": "jest"
   },
   "repository": {
     "type": "git",

@@ -1,0 +1,13 @@
+# Ignore package folder and build folder
+node_modules
+dist
+
+#Ignore logs directory
+logs/
+
+#Ignore the git and cache folders
+.git
+.cache
+
+#Ingore all markdown
+*.md
