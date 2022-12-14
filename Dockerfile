@@ -20,7 +20,7 @@ COPY . .
 RUN npm install
 
 # Run and expose the server on port 3030
-EXPOSE 3030
+EXPOSE 8080
 
 # A command to start the server
 CMD npm run start:migrate
