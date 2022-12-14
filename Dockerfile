@@ -19,6 +19,8 @@ COPY . .
 
 RUN npm install
 
+RUN npm install pm2 -g
+
 # Run and expose the server on port 3030
 EXPOSE 8080
 
