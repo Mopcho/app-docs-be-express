@@ -55,6 +55,7 @@ services:
     volumes:
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
+      - web-root:/var/www/html
     depends_on:
       - webserver
     command: certonly --webroot --webroot-path=/var/www/html --email sammy@mopdocs-backend.xyz --agree-tos --no-eff-email --staging -d mopdocs-backend.xyz  -d www.mopdocs-backend.xyz
@@ -63,3 +64,4 @@ volumes:
   pgadmin-data:
   certbot-etc:
   certbot-var:
+  web-root:
