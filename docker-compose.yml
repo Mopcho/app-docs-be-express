@@ -49,7 +49,6 @@ services:
       - ./nginx-conf:/etc/nginx/conf.d
       - certbot-etc:/etc/letsencrypt
       - certbot-var:/var/lib/letsencrypt
-      - dhparam:/etc/ssl/certs
     depends_on:
       - docsapi
   certbot:
@@ -72,10 +71,4 @@ volumes:
     driver_opts:
       type: none
       device: /home/projects/views/
-      o: bind
-  dhparam:
-    driver: local
-    driver_opts:
-      type: none
-      device: /home/projects/dhparam/
       o: bind
