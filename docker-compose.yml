@@ -20,8 +20,8 @@ services:
       dockerfile: Dockerfile
     container_name: docsapi
     environment:
-      - VIRTUAL_HOST=mopdocs-backend.xyz
-      - LETSENCRYPT_HOST=mopdocs-backend.xyz
+      - VIRTUAL_HOST=backend.mopdocs.xyz
+      - LETSENCRYPT_HOST=backend.mopdocs.xyz 
     depends_on:
       - postgres
     ports:
