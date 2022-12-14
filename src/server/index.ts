@@ -21,7 +21,7 @@ const app: Express = express();
 // ------------ CORS -------------
 app.use(cors({
 	credentials: true,
-	origin: 'mopdocs.xyz'
+	origin: 'https://mopdocs.xyz'
 }));
 
 // ----------- BODY PARSER --------------
