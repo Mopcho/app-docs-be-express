@@ -35,7 +35,7 @@ services:
     depends_on:
       - postgres
     ports:
-      - "3030:3030"
+      - "80:3030"
     restart: always
 volumes:
   local_pgdata:
