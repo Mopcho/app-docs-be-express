@@ -8,7 +8,7 @@
     "//start_comment": "node dist/index.js",
     "dev": "concurrently \"npx tsc --watch\" \"nodemon -q dist/index.js\"",
     "start": "nodemon src/server/index.ts",
-    "start:migrate": "npx prisma migrate dev --name Init && pm2-runtime dist/server/index.js",
+    "start:migrate": "npx prisma migrate dev --name Init && npm run build && pm2-runtime dist/server/index.js",
     "test": "jest"
   },
   "repository": {
