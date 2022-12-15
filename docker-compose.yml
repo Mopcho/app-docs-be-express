@@ -38,13 +38,19 @@ services:
       - "/usr/share/nginx/html"
       - "/var/run/docker.sock:/tmp/docker.sock:ro"
       - "/etc/nginx/certs"
+      - acme:/etc/acme.sh
+      - certs:/etc/nginx/certs:ro
   letsencrypt-nginx-proxy-companion:
     restart: always
     image: jrcs/letsencrypt-nginx-proxy-companion
     volumes:
+      - acme:/etc/acme.sh
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - certs:/etc/nginx/certs:ro
     volumes_from:
       - "nginx-proxy"
 volumes:
   local_pgdata:
   pgadmin-data:
+  acme:
+  certs:
