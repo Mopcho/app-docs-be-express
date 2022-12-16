@@ -26,10 +26,14 @@ The docs API provides you with endpoints with which you can do CRUD operations o
 In order to run the API, first you need to fill in the .env file. We will go over every property and what it does so dont worry about that. By the way here is a quick .env template you can copy and paste :
 
 ```
-PORT = 3030
+PORT = 8080
 ISHTTPS = "false"
 
-DATABASE_URL = "postgresql://postgres:postgres@postgres:5432/docsDB"
+# If you are running the production docker-compose.prod.yml use this (you need a domain for it): 
+#DATABASE_URL = "postgresql://postgres:postgres@postgres:5432/docsDB"
+
+# If you are running the local docker-compose.yml (which is default) use this :
+DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/docsDB"
 
 AWS_BUCKET_NAME = 
 AWS_BUCKET_REGION = 
@@ -40,11 +44,11 @@ AWS_MEDIABUCKET_NAME =
 AWS_MEDIABUCKET_REGION = 
 ```
 
-- PORT : This is the port the API will run on. The docker container will bind port 3030 to port 3030 so leave it like that or change it in both places (both in the .env, the Dockerfile and the docker-compose file)
+- PORT : This is the port the API will run on. The docker container will bind port 8080 to port 8080 so leave it like that or change it in both places (both in the .env, the Dockerfile and the docker-compose file)
 
-- ISHTTPS : This specifies if the server should be run in HTTPS or HTTP mode.
+- ISHTTPS : This specifies if the server should be run in HTTPS or HTTP mode. This should be set to true if you want to run the api outside of a docker container. (In that case you will have to manually create a certificate and a key)
 
-- DATABASE_URL : For a database URL leave it as it is. This is basically the connection string for connecting to the database. If you want to change anything be sure to also change it in the docker-compose file too
+- DATABASE_URL : For a database URL leave uncomment the one you want to use.
 
 - The rest of the fields are all related to AWS. You need to setup an AWS account first and configure it. FOllow [this](#Setting-up-AWS) link here to learn how.
 
