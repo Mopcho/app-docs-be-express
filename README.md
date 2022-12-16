@@ -30,7 +30,7 @@ PORT = 8080
 ISHTTPS = "false"
 
 # If you are running the production docker-compose.prod.yml use this (you need a domain for it): 
-#DATABASE_URL = "postgresql://postgres:postgres@postgres:5432/docsDB"
+# DATABASE_URL = "postgresql://postgres:postgres@postgres:5432/docsDB"
 
 # If you are running the local docker-compose.yml (which is default) use this :
 DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/docsDB"
