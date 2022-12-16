@@ -1,0 +1,56 @@
+version: "3.9"
+services:
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: unless-stopped
+    hostname: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: docsDB
+    volumes:
+      - local_pgdata:/var/lib/postgresql/data
+  docsapi:
+    stdin_open: true
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: docsapi
+    environment:
+      - VIRTUAL_HOST=backend.mopdocs.xyz
+      - LETSENCRYPT_HOST=backend.mopdocs.xyz 
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    restart: always
+  nginx-proxy:
+    restart: always
+    image: jwilder/nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/etc/nginx/vhost.d"
+      - "/usr/share/nginx/html"
+      - "/etc/nginx/certs"
+      - acme:/etc/acme.sh
+      - certs:/etc/nginx/certs:ro
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+  letsencrypt-nginx-proxy-companion:
+    restart: always
+    image: jrcs/letsencrypt-nginx-proxy-companion
+    volumes:
+      - acme:/etc/acme.sh
+      - certs:/etc/nginx/certs:rw
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    volumes_from:
+      - "nginx-proxy"
+volumes:
+  local_pgdata:
+  pgadmin-data:
+  acme:
+  certs:
