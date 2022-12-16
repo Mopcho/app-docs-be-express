@@ -9,6 +9,7 @@ The docs API provides you with endpoints with which you can do CRUD operations o
 - [Technologies Used](#Technologies-Used)
 - [Setting up the API](#Setting-up-the-API)
 - [Setting up AWS](#Setting-up-AWS)
+- [Starting the API](#Starting-the-API)
 - [How the API works under the hood](#How-the-API-works-under-the-hood)
 - [Routes](#Routes)
 
@@ -154,6 +155,14 @@ Thats it. You are ready !
         "ExposeHeaders": []
     }
 ]
+```
+
+## Starting the API
+
+In order to start the API you must have filled in the .env and configured AWS correctly. If you now need to open Docker and run this command in the root of the project 
+
+```
+docker compose up -d
 ```
 
 ## How the API works under the hood
