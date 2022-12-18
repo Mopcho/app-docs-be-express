@@ -1,22 +1,7 @@
 import { NextFunction, Request,Response } from "express";
 import usersService from "../services/users.service";
 
-
 const RESOURCE = 'User';
-/**
- * Create
- */
-// async function create(req: Request, res: Response) {
-// 	try {
-// 		const data = req.body;
-// 		let dataResponse = await usersService.create(data);
-// 		res.status(201).json(dataResponse);
-// 	} catch (error) {
-// 		console.log(`[${RESOURCE}:create] route handler error:${error}`);
-// 		_errorHandler(error as Error, res);
-// 	}
-// }
-
 // /**
 //  * Read
 //  */
@@ -68,24 +53,11 @@ async function _delete(req: Request, res: Response, next: NextFunction) {
 	}
 }
 
-async function getByToken(req: Request, res: Response, next: NextFunction) {
-	try {
-		// @ts-ignore
-		const dataResponse = await usersService.getByToken(req.auth);
-
-		res.status(200).json(dataResponse);
-	} catch (error) {
-		next(error);
-	}
-}
-
 const userController = {
-    // create,
     get,
     find,
     _delete,
-    update,
-    getByToken
+    update
 }
 
 export default userController;
