@@ -12,25 +12,6 @@ const RESOURCE = 'Users';
  */
 
 /**
- * Create
- */
-// async function create(data: any) {
-// 	try {
-// 		// Create User in our DB
-// 		return await prisma.user.create({
-// 			data: {
-// 				username: data.name,
-// 				email: data.email,
-// 				id: data._id,
-// 			},
-// 		});
-// 	} catch (error: any) {
-// 		console.log(`[${RESOURCE}:create] controller error:${error}`);
-// 		throw error;
-// 	}
-// }
-
-/**
  * Read
  */
 
@@ -89,28 +70,6 @@ async function get(id: string) {
 	}
 }
 
-// async function getByToken(auth: any) {
-// 	try {
-// 		if (!auth) {
-// 			throw new NotFoundError('Token not found');
-// 		}
-// 		const user = await prisma.user.findUnique({
-// 			where: {
-// 				auth0Id: auth.sub,
-// 			},
-// 		});
-
-// 		if (!user) {
-// 			throw new NotFoundError('User not found');
-// 		}
-
-// 		return user;
-// 	} catch (error: any) {
-// 		console.log(`[${RESOURCE}:get] controller error:${error}`);
-// 		throw error;
-// 	}
-// }
-
 /**
  * Update
  */
@@ -155,10 +114,8 @@ function isDateSector(key: string) {
 /* Specific */
 
 export default {
-	// create,
 	find,
 	delete: _delete,
 	get,
 	update,
-	// getByToken,
 };
